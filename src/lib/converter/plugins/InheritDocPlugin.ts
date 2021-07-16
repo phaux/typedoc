@@ -30,7 +30,7 @@ export class InheritDocPlugin extends ConverterComponent {
     /**
      * Create a new InheritDocPlugin instance.
      */
-    initialize() {
+    override initialize() {
         this.listenTo(
             this.owner,
             {
@@ -81,6 +81,7 @@ export class InheritDocPlugin extends ConverterComponent {
                 if (referencedReflection instanceof Reflection) {
                     copyComment(item, referencedReflection);
                 }
+                return true;
             };
             reflection.traverse(descendantsCallback);
         }

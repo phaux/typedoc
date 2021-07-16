@@ -124,7 +124,7 @@ function getEntryPointsForPackages(
             return;
         }
         results.push({
-            displayName: packageJson.name as string,
+            displayName: packageJson["name"] as string,
             path: packageEntryPoint,
             program,
             sourceFile,
@@ -261,7 +261,7 @@ export class Application extends ChildableComponent<
     /**
      * Return the application / root component instance.
      */
-    get application(): NeverIfInternal<Application> {
+    override get application(): NeverIfInternal<Application> {
         this.logger.deprecated(
             "Application.application is deprecated. Plugins are now passed the application instance when loaded."
         );
@@ -285,6 +285,9 @@ export class Application extends ChildableComponent<
      * @returns An instance of ProjectReflection on success, undefined otherwise.
      */
     public convert(): ProjectReflection | undefined {
+        // We seal here rather than in the Converter class since TypeDoc's tests reuse the Application
+        // with a few different settings.
+        this.options.freeze();
         this.logger.verbose(
             `Using TypeScript ${this.getTypeScriptVersion()} from ${this.getTypeScriptPath()}`
         );
@@ -355,6 +358,7 @@ export class Application extends ChildableComponent<
     public convertAndWatch(
         success: (project: ProjectReflection) => Promise<void>
     ): void {
+        this.options.freeze();
         if (
             !this.options.getValue("preserveWatchOutput") &&
             this.logger instanceof ConsoleLogger
@@ -662,7 +666,7 @@ export class Application extends ChildableComponent<
     /**
      * Print the version number.
      */
-    toString() {
+    override toString() {
         return [
             "",
             `TypeDoc ${Application.VERSION}`,

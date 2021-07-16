@@ -1,4 +1,3 @@
-import { cloneDeep } from "lodash";
 import * as ts from "typescript";
 import { NeverIfInternal } from "..";
 import { Application } from "../../..";
@@ -84,6 +83,20 @@ export class Options {
 
     constructor(logger: Logger) {
         this._logger = logger;
+    }
+
+    /**
+     * Marks the options as readonly, enables caching when fetching options, which improves performance.
+     */
+    freeze() {
+        Object.freeze(this._values);
+    }
+
+    /**
+     * Checks if the options object has been frozen, preventing future changes to option values.
+     */
+    isFrozen() {
+        return Object.isFrozen(this._values);
     }
 
     /**
@@ -225,8 +238,8 @@ export class Options {
     /**
      * Gets all of the TypeDoc option values defined in this option container.
      */
-    getRawValues(): Partial<TypeDocOptions> {
-        return cloneDeep(this._values);
+    getRawValues(): Readonly<Partial<TypeDocOptions>> {
+        return this._values;
     }
 
     /**
@@ -261,6 +274,12 @@ export class Options {
         configPath?: NeverIfInternal<string>
     ): void;
     setValue(name: string, value: unknown, configPath?: string): void {
+        if (this.isFrozen()) {
+            throw new Error(
+                "Tried to modify an option value after options have been sealed."
+            );
+        }
+
         const declaration = this.getDeclaration(name);
         if (!declaration) {
             throw new Error(
@@ -280,8 +299,8 @@ export class Options {
     /**
      * Gets the set compiler options.
      */
-    getCompilerOptions(): ts.CompilerOptions {
-        return cloneDeep(this._compilerOptions);
+    getCompilerOptions(): Readonly<ts.CompilerOptions> {
+        return this._compilerOptions;
     }
 
     /**
@@ -306,6 +325,12 @@ export class Options {
         options: ts.CompilerOptions,
         projectReferences: readonly ts.ProjectReference[] | undefined
     ) {
+        if (this.isFrozen()) {
+            throw new Error(
+                "Tried to modify an option value after options have been sealed."
+            );
+        }
+
         // We do this here instead of in the tsconfig reader so that API consumers which
         // supply a program to `Converter.convert` instead of letting TypeDoc create one
         // can just set the compiler options, and not need to know about this mapping.
@@ -315,7 +340,7 @@ export class Options {
             this.setValue("excludeInternal", true);
         }
         this._fileNames = fileNames;
-        this._compilerOptions = cloneDeep(options);
+        this._compilerOptions = { ...options };
         this._projectReferences = projectReferences ?? [];
     }
 }
@@ -354,13 +379,15 @@ export function BindOption(name: string) {
     ) {
         Object.defineProperty(target, key, {
             get(this: { application: Application } | { options: Options }) {
-                if ("options" in this) {
-                    return this.options.getValue(name as keyof TypeDocOptions);
-                } else {
-                    return this.application.options.getValue(
-                        name as keyof TypeDocOptions
-                    );
+                const options =
+                    "options" in this ? this.options : this.application.options;
+                const value = options.getValue(name as keyof TypeDocOptions);
+
+                if (options.isFrozen()) {
+                    Object.defineProperty(this, key, { value });
                 }
+
+                return value;
             },
             enumerable: true,
             configurable: true,

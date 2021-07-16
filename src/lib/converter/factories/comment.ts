@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import { toArray } from "lodash";
 
 import { Comment, CommentTag } from "../../models/comments/index";
 import { Logger } from "../../utils";
@@ -36,7 +35,7 @@ function getRootModuleDeclaration(node: ts.ModuleDeclaration): ts.Node {
         node.parent &&
         node.parent.kind === ts.SyntaxKind.ModuleDeclaration
     ) {
-        const parent = <ts.ModuleDeclaration>node.parent;
+        const parent = node.parent;
         if (node.name.pos === parent.name.end + 1) {
             node = parent;
         } else {
@@ -61,10 +60,10 @@ function getJSDocCommentRanges(node: ts.Node, text: string): ts.CommentRange[] {
         ts.SyntaxKind.ParenthesizedExpression,
     ].includes(node.kind);
 
-    let commentRanges = toArray(ts.getLeadingCommentRanges(text, node.pos));
+    let commentRanges = ts.getLeadingCommentRanges(text, node.pos) ?? [];
     if (hasTrailingCommentRanges) {
-        commentRanges = toArray(
-            ts.getTrailingCommentRanges(text, node.pos)
+        commentRanges = (
+            ts.getTrailingCommentRanges(text, node.pos) ?? []
         ).concat(commentRanges);
     }
 
@@ -120,6 +119,8 @@ export function getRawComment(
         node = node.parent;
     } else if (node.kind === ts.SyntaxKind.ExportSpecifier) {
         node = node.parent.parent;
+    } else if (node.kind === ts.SyntaxKind.FunctionType) {
+        node = node.parent;
     }
 
     const sourceFile = node.getSourceFile();

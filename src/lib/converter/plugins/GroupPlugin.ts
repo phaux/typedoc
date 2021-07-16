@@ -9,7 +9,8 @@ import { SourceDirectory } from "../../models/sources/directory";
 import { Component, ConverterComponent } from "../components";
 import { Converter } from "../converter";
 import { Context } from "../context";
-import { sortReflections } from "../../utils/sort";
+import { sortReflections, SortStrategy } from "../../utils/sort";
+import { BindOption } from "../../utils";
 
 /**
  * A handler that sorts and groups the found reflections in the resolving phase.
@@ -37,10 +38,14 @@ export class GroupPlugin extends ConverterComponent {
         [ReflectionKind.TypeAlias]: "Type aliases",
     };
 
+    /** @internal */
+    @BindOption("sort")
+    sortStrategies!: SortStrategy[];
+
     /**
      * Create a new GroupPlugin instance.
      */
-    initialize() {
+    override initialize() {
         this.listenTo(this.owner, {
             [Converter.EVENT_RESOLVE]: this.onResolve,
             [Converter.EVENT_RESOLVE_END]: this.onEndResolve,
@@ -92,10 +97,7 @@ export class GroupPlugin extends ConverterComponent {
             reflection.children.length > 0 &&
             !reflection.groups
         ) {
-            sortReflections(
-                reflection.children,
-                this.application.options.getValue("sort")
-            );
+            sortReflections(reflection.children, this.sortStrategies);
             reflection.groups = GroupPlugin.getReflectionGroups(
                 reflection.children
             );

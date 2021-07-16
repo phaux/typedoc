@@ -38,7 +38,7 @@ export class SourcePlugin extends ConverterComponent {
     /**
      * Create a new SourceHandler instance.
      */
-    initialize() {
+    override initialize() {
         this.listenTo(this.owner, {
             [Converter.EVENT_END]: this.onEnd,
             [Converter.EVENT_CREATE_DECLARATION]: this.onDeclaration,
@@ -94,10 +94,13 @@ export class SourcePlugin extends ConverterComponent {
         if (isNamedNode(node)) {
             position = ts.getLineAndCharacterOfPosition(
                 sourceFile,
-                node.name.end
+                node.name.getStart()
             );
         } else {
-            position = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
+            position = ts.getLineAndCharacterOfPosition(
+                sourceFile,
+                node.getStart()
+            );
         }
 
         if (reflection instanceof DeclarationReflection) {

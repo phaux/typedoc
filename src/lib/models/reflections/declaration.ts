@@ -1,4 +1,3 @@
-import { toArray } from "lodash";
 import type * as ts from "typescript";
 import { ReferenceType, ReflectionType, Type } from "../types/index";
 import {
@@ -138,7 +137,7 @@ export class DeclarationReflection
      */
     typeHierarchy?: DeclarationHierarchy;
 
-    hasGetterOrSetter(): boolean {
+    override hasGetterOrSetter(): boolean {
         return !!this.getSignature || !!this.setSignature;
     }
 
@@ -178,8 +177,8 @@ export class DeclarationReflection
      *
      * @param callback  The callback function that should be applied for each child reflection.
      */
-    traverse(callback: TraverseCallback) {
-        for (const parameter of toArray(this.typeParameters)) {
+    override traverse(callback: TraverseCallback) {
+        for (const parameter of this.typeParameters ?? []) {
             if (callback(parameter, TraverseProperty.TypeParameter) === false) {
                 return;
             }
@@ -196,7 +195,7 @@ export class DeclarationReflection
             }
         }
 
-        for (const signature of toArray(this.signatures)) {
+        for (const signature of this.signatures ?? []) {
             if (callback(signature, TraverseProperty.Signatures) === false) {
                 return;
             }
@@ -237,7 +236,7 @@ export class DeclarationReflection
     /**
      * Return a string representation of this reflection.
      */
-    toString(): string {
+    override toString(): string {
         let result = super.toString();
 
         if (this.typeParameters) {

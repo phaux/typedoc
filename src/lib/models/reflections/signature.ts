@@ -9,7 +9,6 @@ import {
 } from "./abstract";
 import { ParameterReflection } from "./parameter";
 import { TypeParameterReflection } from "./type-parameter";
-import { toArray } from "lodash";
 import type { DeclarationReflection } from "./declaration";
 
 export class SignatureReflection
@@ -27,14 +26,14 @@ export class SignatureReflection
         super(name, kind, parent);
     }
 
-    kind!:
+    override kind!:
         | ReflectionKind.SetSignature
         | ReflectionKind.GetSignature
         | ReflectionKind.IndexSignature
         | ReflectionKind.CallSignature
         | ReflectionKind.ConstructorSignature;
 
-    parent!: DeclarationReflection;
+    override parent!: DeclarationReflection;
 
     parameters?: ParameterReflection[];
 
@@ -86,7 +85,7 @@ export class SignatureReflection
      *
      * @param callback  The callback function that should be applied for each child reflection.
      */
-    traverse(callback: TraverseCallback) {
+    override traverse(callback: TraverseCallback) {
         if (this.type instanceof ReflectionType) {
             if (
                 callback(
@@ -98,13 +97,13 @@ export class SignatureReflection
             }
         }
 
-        for (const parameter of toArray(this.typeParameters)) {
+        for (const parameter of this.typeParameters ?? []) {
             if (callback(parameter, TraverseProperty.TypeParameter) === false) {
                 return;
             }
         }
 
-        for (const parameter of toArray(this.parameters)) {
+        for (const parameter of this.parameters ?? []) {
             if (callback(parameter, TraverseProperty.Parameters) === false) {
                 return;
             }
@@ -116,7 +115,7 @@ export class SignatureReflection
     /**
      * Return a string representation of this reflection.
      */
-    toString(): string {
+    override toString(): string {
         let result = super.toString();
 
         if (this.typeParameters) {
